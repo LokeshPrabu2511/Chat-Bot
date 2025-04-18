@@ -3,6 +3,13 @@ const chatMessages = document.getElementById('chat-messages');
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
 
+function createLoadingAnimation() {
+    const loadingDiv = document.createElement('div');
+    loadingDiv.classList.add('loading');
+    loadingDiv.innerHTML = '<span></span><span></span><span></span>';
+    return loadingDiv;
+}
+
 async function getGeminiResponse(prompt) {
     try {
         const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=' + API_KEY, {
@@ -27,11 +34,25 @@ async function getGeminiResponse(prompt) {
     }
 }
 
+function formatMessage(text) {
+    return text
+        .split('\n')
+        .map(line => line.trim())
+        .join('\n')
+        .replace(/\n/g, '<br>');
+}
+
 function addMessage(message, isUser) {
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message');
     messageDiv.classList.add(isUser ? 'user-message' : 'bot-message');
-    messageDiv.textContent = message;
+    
+    if (isUser) {
+        messageDiv.textContent = message;
+    } else {
+        messageDiv.innerHTML = formatMessage(message);
+    }
+    
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
@@ -42,7 +63,12 @@ async function handleSend() {
         addMessage(message, true);
         userInput.value = '';
         
+        const loading = createLoadingAnimation();
+        chatMessages.appendChild(loading);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
         const response = await getGeminiResponse(message);
+        loading.remove();
         addMessage(response, false);
     }
 }
